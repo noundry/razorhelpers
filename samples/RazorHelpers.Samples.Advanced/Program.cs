@@ -1,0 +1,1 @@
+using RazorHelpers; var builder = WebApplication.CreateBuilder(args); builder.Services.AddRazorHelpers(); var app = builder.Build(); app.MapGet("/", () => "Advanced RazorHelpers Sample - See Program.cs for ComponentHelper examples"); app.Run();

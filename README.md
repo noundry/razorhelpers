@@ -7,12 +7,12 @@ A powerful library for rendering Razor components as HTML strings or IResult res
 
 ## Features
 
-- **Inline Razor Templates**: Use Razor syntax directly in minimal API endpoints
-- **Strongly-Typed Models**: Full support for models and type-safe templates
-- **Component Rendering**: Render any Razor component to HTML
+- **RenderFragment Templates**: Use RenderTreeBuilder API for programmatic template creation
+- **Strongly-Typed Models**: Full support for `RenderFragment<T>` with type-safe model binding
+- **Component Rendering**: Render any Razor component class to HTML
 - **Flexible Output**: Return as `IResult` or render to HTML strings
 - **Simple Integration**: Minimal setup with dependency injection
-- **Comprehensive Testing**: Fully tested with high code coverage
+- **Comprehensive Testing**: Fully tested with high code coverage (14 passing tests)
 - **Complete Model Data Binding**: Full support for complex models, nested objects, and collections
 
 ## 📚 Documentation
@@ -57,32 +57,56 @@ var app = builder.Build();
 ### 2. Simple Inline Template
 
 ```csharp
-app.MapGet("/", () => Results.Razor(@<div>
-    <h1>Hello World!</h1>
-    <p>This is a Razor template in a minimal API.</p>
-</div>));
+using Microsoft.AspNetCore.Components.Rendering;
+
+RenderFragment simpleTemplate = builder =>
+{
+    var seq = 0;
+    builder.OpenElement(seq++, "div");
+    builder.OpenElement(seq++, "h1");
+    builder.AddContent(seq++, "Hello World!");
+    builder.CloseElement();
+    builder.OpenElement(seq++, "p");
+    builder.AddContent(seq++, "This is a Razor template in a minimal API.");
+    builder.CloseElement();
+    builder.CloseElement();
+};
+
+app.MapGet("/", () => RazorResults.Razor(simpleTemplate));
 ```
 
 ### 3. Template with Model
 
 ```csharp
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Rendering;
+
 public class User
 {
-    public string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
     public int Age { get; set; }
 }
 
 // Define a template
-RenderFragment<User> userCard = (user) => @<div class="card">
-    <h2>@user.Name</h2>
-    <p>Age: @user.Age</p>
-</div>;
+RenderFragment<User> userCard = user => builder =>
+{
+    var seq = 0;
+    builder.OpenElement(seq++, "div");
+    builder.AddAttribute(seq++, "class", "card");
+    builder.OpenElement(seq++, "h2");
+    builder.AddContent(seq++, user.Name);
+    builder.CloseElement();
+    builder.OpenElement(seq++, "p");
+    builder.AddContent(seq++, $"Age: {user.Age}");
+    builder.CloseElement();
+    builder.CloseElement();
+};
 
 // Use in endpoint
 app.MapGet("/user/{name}/{age:int}", (string name, int age) =>
 {
     var user = new User { Name = name, Age = age };
-    return Results.Razor(userCard, user);
+    return RazorResults.Razor(userCard, user);
 });
 ```
 
@@ -90,22 +114,31 @@ app.MapGet("/user/{name}/{age:int}", (string name, int age) =>
 
 ### Extension Methods
 
-#### `Results.Razor()`
+#### `RazorResults.Razor()`
 
 Renders a `RenderFragment` as an `IResult` that can be returned from minimal API endpoints.
 
 ```csharp
 // Simple template
-app.MapGet("/hello", () =>
-    Results.Razor(@<h1>Hello!</h1>));
+RenderFragment helloTemplate = builder =>
+{
+    builder.OpenElement(0, "h1");
+    builder.AddContent(1, "Hello!");
+    builder.CloseElement();
+};
+
+app.MapGet("/hello", () => RazorResults.Razor(helloTemplate));
 
 // Template with model
 app.MapGet("/user", () =>
-    Results.Razor(userTemplate, user));
+{
+    var user = new User { Name = "John", Age = 30 };
+    return RazorResults.Razor(userTemplate, user);
+});
 
 // With custom status code and content type
 app.MapGet("/custom", () =>
-    Results.Razor(template, 201, "text/html; charset=utf-8"));
+    RazorResults.Razor(template, 201, "text/html; charset=utf-8"));
 ```
 
 #### `RenderAsync()`
@@ -171,114 +204,114 @@ Create a class to organize your templates:
 ```csharp
 public static class Templates
 {
-    public static RenderFragment<User> UserCard => (user) => @<div class="card">
-        <h2>@user.Name</h2>
-        <p><strong>Email:</strong> @user.Email</p>
-        <p><strong>Age:</strong> @user.Age</p>
-    </div>;
+    public static RenderFragment<User> UserCard => user => builder =>
+    {
+        var seq = 0;
+        builder.OpenElement(seq++, "div");
+        builder.AddAttribute(seq++, "class", "card");
+        builder.OpenElement(seq++, "h2");
+        builder.AddContent(seq++, user.Name);
+        builder.CloseElement();
+        builder.OpenElement(seq++, "p");
+        builder.OpenElement(seq++, "strong");
+        builder.AddContent(seq++, "Email:");
+        builder.CloseElement();
+        builder.AddContent(seq++, " " + user.Email);
+        builder.CloseElement();
+        builder.OpenElement(seq++, "p");
+        builder.OpenElement(seq++, "strong");
+        builder.AddContent(seq++, "Age:");
+        builder.CloseElement();
+        builder.AddContent(seq++, " " + user.Age);
+        builder.CloseElement();
+        builder.CloseElement();
+    };
 
-    public static RenderFragment<User[]> UserList => (users) => @<div>
-        <h1>Users (@users.Length)</h1>
-        <div class="user-grid">
-            @foreach (var user in users)
-            {
-                @UserCard(user)
-            }
-        </div>
-    </div>;
+    public static RenderFragment<User[]> UserList => users => builder =>
+    {
+        var seq = 0;
+        builder.OpenElement(seq++, "div");
+        builder.OpenElement(seq++, "h1");
+        builder.AddContent(seq++, $"Users ({users.Length})");
+        builder.CloseElement();
+        builder.OpenElement(seq++, "div");
+        builder.AddAttribute(seq++, "class", "user-grid");
+        foreach (var user in users)
+        {
+            builder.AddContent(seq++, UserCard(user));
+        }
+        builder.CloseElement();
+        builder.CloseElement();
+    };
 }
 ```
 
 ### Layout Templates
 
-Create layout-like templates that accept content:
-
-```csharp
-public static RenderFragment CreateLayout(string title, RenderFragment content) =>
-    @<html>
-    <head>
-        <title>@title</title>
-        <link rel="stylesheet" href="/styles.css" />
-    </head>
-    <body>
-        <header>
-            <h1>@title</h1>
-        </header>
-        <main>
-            @content
-        </main>
-        <footer>
-            <p>&copy; 2024 My App</p>
-        </footer>
-    </body>
-</html>;
-
-// Usage
-app.MapGet("/page", () =>
-{
-    var content = @<div>
-        <p>This is the page content.</p>
-    </div>;
-    return Results.Razor(CreateLayout("My Page", content));
-});
-```
+Create layout-like templates that accept content. For complete layout examples, see the [Patterns documentation](docs/PATTERNS.md#layout-wrapper).
 
 ### Conditional Rendering
 
 ```csharp
-RenderFragment<User> userProfile = (user) => @<div>
-    <h1>@user.Name</h1>
+RenderFragment<User> userProfile = user => builder =>
+{
+    var seq = 0;
+    builder.OpenElement(seq++, "div");
+    builder.OpenElement(seq++, "h1");
+    builder.AddContent(seq++, user.Name);
+    builder.CloseElement();
 
-    @if (!string.IsNullOrEmpty(user.Email))
+    if (!string.IsNullOrEmpty(user.Email))
     {
-        <p>Email: <a href="mailto:@user.Email">@user.Email</a></p>
+        builder.OpenElement(seq++, "p");
+        builder.AddContent(seq++, "Email: ");
+        builder.OpenElement(seq++, "a");
+        builder.AddAttribute(seq++, "href", $"mailto:{user.Email}");
+        builder.AddContent(seq++, user.Email);
+        builder.CloseElement();
+        builder.CloseElement();
     }
 
-    @if (user.Age >= 18)
-    {
-        <span class="badge">Adult</span>
-    }
-    else
-    {
-        <span class="badge">Minor</span>
-    }
-</div>;
+    builder.OpenElement(seq++, "span");
+    builder.AddAttribute(seq++, "class", "badge");
+    builder.AddContent(seq++, user.Age >= 18 ? "Adult" : "Minor");
+    builder.CloseElement();
+
+    builder.CloseElement();
+};
 ```
 
 ### List Rendering
 
 ```csharp
-RenderFragment<Product[]> productGrid = (products) => @<div class="product-grid">
-    @foreach (var product in products)
+RenderFragment<Product[]> productGrid = products => builder =>
+{
+    var seq = 0;
+    builder.OpenElement(seq++, "div");
+    builder.AddAttribute(seq++, "class", "product-grid");
+
+    foreach (var product in products)
     {
-        <div class="product-card">
-            <h3>@product.Name</h3>
-            <p class="price">$@product.Price.ToString("F2")</p>
-            <button>Add to Cart</button>
-        </div>
+        builder.OpenElement(seq++, "div");
+        builder.AddAttribute(seq++, "class", "product-card");
+        builder.OpenElement(seq++, "h3");
+        builder.AddContent(seq++, product.Name);
+        builder.CloseElement();
+        builder.OpenElement(seq++, "p");
+        builder.AddAttribute(seq++, "class", "price");
+        builder.AddContent(seq++, $"${product.Price:F2}");
+        builder.CloseElement();
+        builder.OpenElement(seq++, "button");
+        builder.AddContent(seq++, "Add to Cart");
+        builder.CloseElement();
+        builder.CloseElement();
     }
-</div>;
+
+    builder.CloseElement();
+};
 ```
 
-### Nested Templates
-
-```csharp
-RenderFragment<Dashboard> dashboard = (data) => @<div class="dashboard">
-    <h1>@data.Title</h1>
-
-    <div class="metrics">
-        @foreach (var metric in data.Metrics)
-        {
-            @MetricCard(metric)
-        }
-    </div>
-
-    <div class="activity">
-        <h2>Recent Activity</h2>
-        @ActivityList(data.RecentActivity)
-    </div>
-</div>;
-```
+For more comprehensive examples with complete implementations, see the [documentation](docs/) and [sample projects](samples/).
 
 ### Component Classes
 

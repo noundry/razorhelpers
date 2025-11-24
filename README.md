@@ -1,6 +1,6 @@
 # RazorHelpers
 
-A powerful library for rendering Razor components as HTML strings or IResult responses in ASP.NET Core minimal APIs. RazorHelpers provides extension methods to seamlessly integrate Razor syntax with minimal API endpoints, supporting strongly-typed models and dynamic content rendering.
+A powerful library for rendering Razor components as HTML strings or IResult responses in ASP.NET Core minimal APIs. RazorHelpers uses the RenderTreeBuilder API to enable programmatic template creation with full support for strongly-typed models and dynamic content rendering.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![.NET](https://img.shields.io/badge/.NET-9.0-blue.svg)](https://dotnet.microsoft.com/download/dotnet/9.0)

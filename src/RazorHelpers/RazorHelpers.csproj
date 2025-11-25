@@ -8,11 +8,12 @@
 
     <!-- NuGet Package Metadata -->
     <PackageId>RazorHelpers</PackageId>
-    <Version>1.0.0</Version>
+    <Version>1.1.0</Version>
     <Authors>Your Name</Authors>
     <Company>Your Company</Company>
-    <Description>A powerful library for rendering Razor components as HTML strings or IResult responses in ASP.NET Core minimal APIs. Provides extension methods to seamlessly integrate Razor syntax with minimal API endpoints, supporting strongly-typed models and dynamic content rendering.</Description>
-    <PackageTags>razor;aspnetcore;minimal-api;rendering;templates;components</PackageTags>
+    <Description>A powerful library for rendering Razor components as HTML strings or IResult responses in ASP.NET Core minimal APIs. Features HtmlBuilder for fluent HTML construction, TableBuilder for generating tables from collections, and SelectBuilder for dynamic dropdowns. Supports strongly-typed models and dynamic content rendering.</Description>
+    <PackageTags>razor;aspnetcore;minimal-api;rendering;templates;components;html-builder;fluent-api</PackageTags>
+    <PackageReleaseNotes>v1.1.0: Added HtmlBuilder, TableBuilder, and SelectBuilder for fluent HTML construction from collections.</PackageReleaseNotes>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/yourusername/RazorHelpers</RepositoryUrl>
     <PackageProjectUrl>https://github.com/yourusername/RazorHelpers</PackageProjectUrl>

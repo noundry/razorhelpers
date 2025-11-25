@@ -7,12 +7,15 @@ A powerful library for rendering Razor components as HTML strings or IResult res
 
 ## Features
 
+- **🆕 HtmlBuilder**: Fluent, semantic HTML building API - `Html.Div().Class("card").Child(Html.H1("Title"))`
+- **🆕 TableBuilder**: Generate tables from collections with `Html.Table(users).Column("Name", u => u.Name)`
+- **🆕 SelectBuilder**: Build dropdowns with grouping via `Html.Select(items).GroupBy(x => x.Category)`
 - **RenderFragment Templates**: Use RenderTreeBuilder API for programmatic template creation
 - **Strongly-Typed Models**: Full support for `RenderFragment<T>` with type-safe model binding
 - **Component Rendering**: Render any Razor component class to HTML
 - **Flexible Output**: Return as `IResult` or render to HTML strings
 - **Simple Integration**: Minimal setup with dependency injection
-- **Comprehensive Testing**: Fully tested with high code coverage (14 passing tests)
+- **Comprehensive Testing**: Fully tested with high code coverage (81 passing tests)
 - **Complete Model Data Binding**: Full support for complex models, nested objects, and collections
 
 ## 📚 Documentation
@@ -110,6 +113,68 @@ app.MapGet("/user/{name}/{age:int}", (string name, int age) =>
 });
 ```
 
+### 4. HtmlBuilder - Fluent HTML (New!)
+
+Build HTML with a clean, semantic, fluent API instead of raw RenderTreeBuilder:
+
+```csharp
+// Simple elements
+var fragment = Html.Div("Hello World").Class("greeting").Render();
+
+// Nested elements
+var card = Html.Div()
+    .Class("card")
+    .Style("padding", "20px")
+    .Child(Html.H1("Welcome"))
+    .Child(Html.P("This is so much cleaner!"))
+    .Render();
+
+app.MapGet("/card", () => RazorResults.Razor(card));
+```
+
+### 5. Tables from Collections
+
+```csharp
+var users = new[] {
+    new User("John", "john@example.com", true),
+    new User("Jane", "jane@example.com", false)
+};
+
+var table = Html.Table(users)
+    .Class("table", "table-striped")
+    .Column("Name", u => Html.Strong(u.Name))
+    .Column("Email", u => Html.A($"mailto:{u.Email}", u.Email))
+    .Column("Status", u => Html.Span(u.IsActive ? "Active" : "Inactive")
+        .Style("color", u.IsActive ? "green" : "red"))
+    .Render();
+
+app.MapGet("/users", () => RazorResults.Razor(table));
+```
+
+### 6. Select Dropdowns from Collections
+
+```csharp
+var countries = new[] {
+    new Country("us", "United States"),
+    new Country("uk", "United Kingdom")
+};
+
+var select = Html.Select(countries, "country")
+    .Placeholder("Select a country...")
+    .Value(c => c.Code)
+    .Text(c => c.Name)
+    .SelectedValue("uk")
+    .Render();
+
+// With automatic grouping
+var cars = GetCars(); // Volvo, Saab, Mercedes, Audi with Country property
+var grouped = Html.Select(cars, "car")
+    .Value(c => c.Code)
+    .Text(c => c.Name)
+    .GroupBy(c => c.Country)  // Creates <optgroup> automatically!
+    .Render();
+```
+
 ## Core API
 
 ### Extension Methods
@@ -193,6 +258,95 @@ app.MapGet("/simple", async (IServiceProvider services) =>
         services, "Title", "My Page Title");
     return Results.Content(html, "text/html");
 });
+```
+
+### HtmlBuilder
+
+Build HTML elements fluently with the `Html` static class:
+
+```csharp
+// All standard HTML elements
+Html.Div(), Html.Span(), Html.P(), Html.H1() - Html.H6()
+Html.A(href, text), Html.Img(src, alt), Html.Button(text)
+Html.Form(action, method), Html.Input(type, name, value)
+Html.Ul(), Html.Ol(), Html.Li(), Html.Table(), Html.Select()
+// ... and many more
+
+// Fluent methods for all elements
+.Id("my-id")                      // Set id attribute
+.Class("class1", "class2")        // Add CSS classes
+.ClassIf("active", isActive)      // Conditional class
+.Style("color", "red")            // Inline styles
+.Attr("data-id", "123")           // Any attribute
+.Data("id", "123")                // data-* attributes
+.Text("content")                  // Text content
+.Raw("<b>html</b>")               // Raw HTML
+.Child(element)                   // Add child element
+.Children(elements)               // Add multiple children
+.Render()                         // Convert to RenderFragment
+
+// Lists from collections
+Html.Ul(items, x => x.Name)                    // Simple text list
+Html.Ul(items, x => Html.Strong(x.Name))       // Custom elements
+Html.Each(items, x => Html.Div(x.Name))        // Any repeating element
+```
+
+### TableBuilder
+
+```csharp
+// Manual table
+Html.Table()
+    .Class("table")
+    .Caption("Users")
+    .Header("Name", "Email", "Status")
+    .Row("John", "john@example.com", "Active")
+    .Row("Jane", "jane@example.com", "Inactive")
+    .Render();
+
+// From collection with row selector
+Html.Table(users)
+    .Header("Name", "Email")
+    .Row(u => [u.Name, u.Email])  // String array
+    .Render();
+
+// From collection with column definitions (recommended)
+Html.Table(users)
+    .Column("Name", u => u.Name)                           // Text column
+    .Column("Email", u => Html.A($"mailto:{u.Email}", u.Email))  // Element column
+    .Column("Status", u => u.IsActive ? "Active" : "Inactive")
+    .RowClass(u => u.IsActive ? "active" : "inactive")     // Row CSS class
+    .Render();
+```
+
+### SelectBuilder
+
+```csharp
+// Manual select
+Html.Select("country")
+    .Option("", "Select...")
+    .Option("us", "United States")
+    .Option("uk", "United Kingdom", selected: true)
+    .OptGroup("Europe")
+        .Option("de", "Germany")
+        .Option("fr", "France")
+    .EndGroup()
+    .Render();
+
+// From collection
+Html.Select(countries, "country")
+    .Placeholder("Select a country...")
+    .Value(c => c.Code)
+    .Text(c => c.Name)
+    .SelectedValue("us")
+    .DisabledOption(c => c.IsRestricted)
+    .Render();
+
+// With automatic grouping
+Html.Select(cars, "car")
+    .Value(c => c.Code)
+    .Text(c => c.Name)
+    .GroupBy(c => c.Manufacturer)  // Creates optgroups automatically
+    .Render();
 ```
 
 ## Advanced Usage
@@ -378,16 +532,19 @@ Then navigate to `http://localhost:5000` to see the examples.
 
 Located in `samples/RazorHelpers.Samples.Advanced`, this sample demonstrates:
 - Component rendering with `ComponentHelper`
-- Layout templates
+- **HtmlBuilder** - Fluent HTML building (`/html-builder`)
+- **TableBuilder** - Tables from collections (`/html-builder/table`)
+- **SelectBuilder** - Forms with selects (`/html-builder/form`)
+- Card layouts with collections (`/html-builder/cards`)
 - Nested components and complex data structures
-- Conditional rendering and dynamic styling
-- Dashboard-style applications
 
 Run with:
 ```bash
 cd samples/RazorHelpers.Samples.Advanced
 dotnet run
 ```
+
+Then navigate to `http://localhost:5000/html-builder` to see the HtmlBuilder demos.
 
 ## Testing
 
@@ -484,11 +641,13 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 Future enhancements being considered:
 
+- [x] **HtmlBuilder** - Fluent HTML building API ✅ (v1.1.0)
+- [x] **TableBuilder** - Table generation from collections ✅ (v1.1.0)
+- [x] **SelectBuilder** - Select/dropdown generation ✅ (v1.1.0)
 - [ ] Support for streaming rendering
 - [ ] Integration with ASP.NET Core's anti-forgery tokens
 - [ ] Enhanced error handling and diagnostics
 - [ ] Performance optimizations
-- [ ] Additional template helpers and utilities
 
 ## Examples Gallery
 

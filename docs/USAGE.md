@@ -9,6 +9,7 @@ Complete guide to using RazorHelpers for rendering Razor components in minimal A
 - [Core Concepts](#core-concepts)
 - [Basic Usage](#basic-usage)
 - [Model Data Binding](#model-data-binding)
+- [HtmlBuilder - Fluent HTML](#htmlbuilder---fluent-html) ✨ New in v1.1.0
 - [Advanced Patterns](#advanced-patterns)
 - [Configuration](#configuration)
 
@@ -424,6 +425,389 @@ RenderFragment<BlogPost> blogPostTemplate = post => builder =>
 
     builder.CloseElement();
 };
+```
+
+## HtmlBuilder - Fluent HTML
+
+**New in v1.1.0**: Build HTML with a clean, fluent API instead of raw RenderTreeBuilder calls.
+
+### Why HtmlBuilder?
+
+Compare the traditional approach:
+
+```csharp
+// Traditional RenderTreeBuilder (verbose)
+RenderFragment card = builder =>
+{
+    var seq = 0;
+    builder.OpenElement(seq++, "div");
+    builder.AddAttribute(seq++, "class", "card");
+    builder.OpenElement(seq++, "h1");
+    builder.AddContent(seq++, "Title");
+    builder.CloseElement();
+    builder.OpenElement(seq++, "p");
+    builder.AddContent(seq++, "Content");
+    builder.CloseElement();
+    builder.CloseElement();
+};
+```
+
+With HtmlBuilder:
+
+```csharp
+// HtmlBuilder (clean and readable)
+var card = Html.Div()
+    .Class("card")
+    .Child(Html.H1("Title"))
+    .Child(Html.P("Content"))
+    .Render();
+```
+
+### Basic Elements
+
+```csharp
+// Text content
+Html.Div("Hello World")
+Html.P("Paragraph text")
+Html.Span("Inline text")
+
+// Headings
+Html.H1("Main Title")
+Html.H2("Subtitle")
+// ... H3, H4, H5, H6
+
+// Links and images
+Html.A("/about", "About Us")
+Html.Img("/logo.png", "Company Logo")
+
+// Semantic elements
+Html.Header("Site Header")
+Html.Nav("Navigation")
+Html.Main("Main Content")
+Html.Article("Article")
+Html.Section("Section")
+Html.Aside("Sidebar")
+Html.Footer("Footer")
+
+// Text formatting
+Html.Strong("Bold")
+Html.Em("Italic")
+Html.Code("inline code")
+Html.Pre("preformatted")
+```
+
+### Attributes and Styling
+
+```csharp
+// ID and classes
+Html.Div()
+    .Id("main-content")
+    .Class("container", "mt-4", "mb-4")
+
+// Conditional classes
+var isActive = true;
+Html.Button("Click")
+    .Class("btn")
+    .ClassIf("btn-primary", isActive)
+    .ClassIf("btn-secondary", !isActive)
+
+// Inline styles
+Html.Div()
+    .Style("color", "red")
+    .Style("font-size", "16px")
+    .Style("padding", "20px")
+
+// Multiple styles at once
+Html.Div().Styles(new Dictionary<string, string>
+{
+    ["display"] = "flex",
+    ["justify-content"] = "center"
+})
+
+// Any attribute
+Html.Input("text", "username")
+    .Attr("placeholder", "Enter username")
+    .Attr("required", true)
+    .Attr("maxlength", 50)
+
+// Data attributes
+Html.Div().Data("id", "123").Data("action", "edit")
+// Renders: data-id="123" data-action="edit"
+```
+
+### Nesting Elements
+
+```csharp
+// Single child
+Html.Div()
+    .Child(Html.H1("Title"))
+
+// Multiple children
+Html.Div()
+    .Child(Html.H1("Title"))
+    .Child(Html.P("First paragraph"))
+    .Child(Html.P("Second paragraph"))
+
+// Children array
+Html.Ul().Children(
+    Html.Li("Item 1"),
+    Html.Li("Item 2"),
+    Html.Li("Item 3")
+)
+
+// Children from collection
+var items = new[] { "Apple", "Banana", "Cherry" };
+Html.Ul().Children(items.Select(x => Html.Li(x)))
+```
+
+### Forms and Inputs
+
+```csharp
+Html.Form("/submit", "POST")
+    .Child(Html.Div()
+        .Child(Html.Label("Email:", "email"))
+        .Child(Html.Input("email", "email")
+            .Id("email")
+            .Attr("placeholder", "you@example.com")
+            .Attr("required", true)))
+    .Child(Html.Div()
+        .Child(Html.Label("Password:", "password"))
+        .Child(Html.Input("password", "password")
+            .Id("password")))
+    .Child(Html.Div()
+        .Child(Html.Label("Bio:", "bio"))
+        .Child(Html.Textarea("bio", "Tell us about yourself...")))
+    .Child(Html.Button("Submit", "submit")
+        .Class("btn", "btn-primary"))
+```
+
+### Tables from Collections
+
+#### Manual Table
+
+```csharp
+Html.Table()
+    .Class("table")
+    .Caption("User List")
+    .Header("Name", "Email", "Role")
+    .Row("John", "john@example.com", "Admin")
+    .Row("Jane", "jane@example.com", "User")
+    .Render()
+```
+
+#### Table from Collection
+
+```csharp
+var users = new[]
+{
+    new User("John", "john@example.com", "Admin", true),
+    new User("Jane", "jane@example.com", "User", false)
+};
+
+// Using Row selector (string array)
+Html.Table(users)
+    .Header("Name", "Email", "Role", "Status")
+    .Row(u => [u.Name, u.Email, u.Role, u.IsActive ? "Active" : "Inactive"])
+    .Render()
+
+// Using Row selector (HtmlElement array)
+Html.Table(users)
+    .Header("Name", "Email", "Status")
+    .Row(u => [
+        Html.Strong(u.Name),
+        Html.A($"mailto:{u.Email}", u.Email),
+        Html.Span(u.IsActive ? "Active" : "Inactive")
+            .Style("color", u.IsActive ? "green" : "red")
+    ])
+    .Render()
+
+// Using Column definitions (recommended for complex tables)
+Html.Table(users)
+    .Column("Name", u => u.Name)
+    .Column("Email", u => Html.A($"mailto:{u.Email}", u.Email))
+    .Column("Role", u => u.Role)
+    .Column("Status", u => Html.Span(u.IsActive ? "✓" : "✗")
+        .Class(u.IsActive ? "text-success" : "text-danger"))
+    .RowClass(u => u.IsActive ? "active-row" : "")
+    .Render()
+
+// With row index
+Html.Table(items)
+    .Header("#", "Name")
+    .Row((item, index) => [(index + 1).ToString(), item.Name])
+    .Render()
+```
+
+### Select Dropdowns
+
+#### Manual Select
+
+```csharp
+Html.Select("country")
+    .Id("country")
+    .Class("form-select")
+    .Required()
+    .Option("", "Select a country...")
+    .Option("us", "United States")
+    .Option("uk", "United Kingdom")
+    .Option("ca", "Canada")
+    .Render()
+
+// With optgroups
+Html.Select("car")
+    .OptGroup("Swedish Cars")
+        .Option("volvo", "Volvo")
+        .Option("saab", "Saab")
+    .EndGroup()
+    .OptGroup("German Cars")
+        .Option("mercedes", "Mercedes")
+        .Option("audi", "Audi")
+    .EndGroup()
+    .Render()
+```
+
+#### Select from Collection
+
+```csharp
+var countries = new[]
+{
+    new Country("us", "United States"),
+    new Country("uk", "United Kingdom"),
+    new Country("ca", "Canada")
+};
+
+// Basic select
+Html.Select(countries, "country")
+    .Value(c => c.Code)
+    .Text(c => c.Name)
+    .Placeholder("Select a country...")
+    .Render()
+
+// With selected value
+Html.Select(countries, "country")
+    .Value(c => c.Code)
+    .Text(c => c.Name)
+    .SelectedValue("uk")  // Pre-select UK
+    .Render()
+
+// With selected predicate
+var currentCountry = "us";
+Html.Select(countries, "country")
+    .Value(c => c.Code)
+    .Text(c => c.Name)
+    .Selected(c => c.Code == currentCountry)
+    .Render()
+
+// With disabled options
+Html.Select(plans, "plan")
+    .Value(p => p.Code)
+    .Text(p => p.Name)
+    .DisabledOption(p => p.RequiresPremium && !user.IsPremium)
+    .Render()
+
+// With automatic grouping
+var cars = new[]
+{
+    new Car("volvo", "Volvo", "Swedish"),
+    new Car("saab", "Saab", "Swedish"),
+    new Car("mercedes", "Mercedes", "German")
+};
+
+Html.Select(cars, "car")
+    .Value(c => c.Code)
+    .Text(c => c.Name)
+    .GroupBy(c => c.Country)  // Creates optgroups automatically!
+    .Render()
+```
+
+### Lists from Collections
+
+```csharp
+var items = new[] { "Apple", "Banana", "Cherry" };
+
+// Simple text list
+Html.Ul(items, x => x)
+// <ul><li>Apple</li><li>Banana</li><li>Cherry</li></ul>
+
+// Custom element list
+Html.Ul(items, x => Html.Strong(x))
+// <ul><li><strong>Apple</strong></li>...</ul>
+
+// Ordered list
+Html.Ol(items, x => x)
+
+// Any repeating element with Html.Each
+var cards = Html.Each(products, p =>
+    Html.Div()
+        .Class("card")
+        .Child(Html.H3(p.Name))
+        .Child(Html.P(p.Description))
+        .Child(Html.Span($"${p.Price:F2}").Class("price")));
+```
+
+### Fragments (Multiple Elements Without Wrapper)
+
+```csharp
+// Render multiple elements without a container
+var fragment = Html.Fragment(
+    Html.H1("Title"),
+    Html.P("First paragraph"),
+    Html.P("Second paragraph")
+);
+
+// From collection
+var fragment = Html.Fragment(items.Select(x => Html.P(x)));
+```
+
+### Raw HTML Content
+
+```csharp
+// Insert unencoded HTML
+Html.Div().Raw("<strong>Bold</strong> and <em>italic</em>")
+
+// Mix with other content
+Html.Div()
+    .Child(Html.H1("Title"))
+    .Raw("<hr>")
+    .Child(Html.P("Content"))
+```
+
+### Using with Endpoints
+
+```csharp
+// Direct rendering
+app.MapGet("/card", () =>
+{
+    var card = Html.Div()
+        .Class("card")
+        .Child(Html.H1("Welcome"))
+        .Child(Html.P("This is a card."))
+        .Render();
+
+    return RazorResults.Razor(card);
+});
+
+// With async rendering
+app.MapGet("/users", async (IServiceProvider services) =>
+{
+    var users = await GetUsersAsync();
+
+    var table = Html.Table(users)
+        .Class("table")
+        .Column("Name", u => u.Name)
+        .Column("Email", u => u.Email)
+        .Render();
+
+    var html = await table.RenderAsync(services);
+    return Results.Content(html, "text/html");
+});
+
+// Implicit conversion to RenderFragment
+app.MapGet("/simple", () =>
+{
+    RenderFragment fragment = Html.Div("Hello!");  // Implicit conversion
+    return RazorResults.Razor(fragment);
+});
 ```
 
 ## Advanced Patterns

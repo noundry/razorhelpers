@@ -404,8 +404,17 @@ Static entry point for building HTML elements fluently. **New in v1.1.0**
 | `Li(content?)` | `HtmlElement` | Creates a `<li>` element |
 | `Strong(content?)` | `HtmlElement` | Creates a `<strong>` element |
 | `Em(content?)` | `HtmlElement` | Creates an `<em>` element |
+| `B(content?)` | `HtmlElement` | Creates a `<b>` element (bold) |
+| `I(content?)` | `HtmlElement` | Creates an `<i>` element (italic) |
+| `U(content?)` | `HtmlElement` | Creates a `<u>` element (underline) |
+| `S(content?)` | `HtmlElement` | Creates an `<s>` element (strikethrough) |
 | `Code(content?)` | `HtmlElement` | Creates a `<code>` element |
 | `Pre(content?)` | `HtmlElement` | Creates a `<pre>` element |
+| `Kbd(content?)` | `HtmlElement` | Creates a `<kbd>` element (keyboard input) |
+| `Samp(content?)` | `HtmlElement` | Creates a `<samp>` element (sample output) |
+| `Var(content?)` | `HtmlElement` | Creates a `<var>` element (variable) |
+| `Q(content?)` | `HtmlElement` | Creates a `<q>` element (inline quote) |
+| `Address(content?)` | `HtmlElement` | Creates an `<address>` element |
 | `Br()` | `HtmlVoidElement` | Creates a `<br>` element |
 | `Hr()` | `HtmlVoidElement` | Creates an `<hr>` element |
 | `Element(tagName, content?)` | `HtmlElement` | Creates a custom element |

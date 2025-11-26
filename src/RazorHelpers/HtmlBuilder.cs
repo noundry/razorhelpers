@@ -461,6 +461,33 @@ public static class Html
     /// <summary>Creates a &lt;time&gt; element.</summary>
     public static HtmlElement Time(string? content = null) => new("time", content);
 
+    /// <summary>Creates a &lt;b&gt; element (bold text).</summary>
+    public static HtmlElement B(string? content = null) => new("b", content);
+
+    /// <summary>Creates an &lt;i&gt; element (italic text).</summary>
+    public static HtmlElement I(string? content = null) => new("i", content);
+
+    /// <summary>Creates a &lt;u&gt; element (underlined text).</summary>
+    public static HtmlElement U(string? content = null) => new("u", content);
+
+    /// <summary>Creates an &lt;s&gt; element (strikethrough text).</summary>
+    public static HtmlElement S(string? content = null) => new("s", content);
+
+    /// <summary>Creates a &lt;kbd&gt; element (keyboard input).</summary>
+    public static HtmlElement Kbd(string? content = null) => new("kbd", content);
+
+    /// <summary>Creates a &lt;samp&gt; element (sample output).</summary>
+    public static HtmlElement Samp(string? content = null) => new("samp", content);
+
+    /// <summary>Creates a &lt;var&gt; element (variable).</summary>
+    public static HtmlElement Var(string? content = null) => new("var", content);
+
+    /// <summary>Creates a &lt;q&gt; element (inline quote).</summary>
+    public static HtmlElement Q(string? content = null) => new("q", content);
+
+    /// <summary>Creates an &lt;address&gt; element (contact information).</summary>
+    public static HtmlElement Address(string? content = null) => new("address", content);
+
     // Links and media
     /// <summary>Creates an &lt;a&gt; element with the specified href.</summary>
     public static HtmlElement A(string? href = null, string? content = null) =>

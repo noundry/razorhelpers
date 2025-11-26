@@ -492,8 +492,17 @@ Html.Footer("Footer")
 // Text formatting
 Html.Strong("Bold")
 Html.Em("Italic")
+Html.B("Bold")           // Alternative to Strong
+Html.I("Italic")         // Alternative to Em
+Html.U("Underline")
+Html.S("Strikethrough")
 Html.Code("inline code")
 Html.Pre("preformatted")
+Html.Kbd("Ctrl+C")       // Keyboard input
+Html.Samp("output")      // Sample output
+Html.Var("x")            // Variable
+Html.Q("quoted text")    // Inline quote
+Html.Address("Contact")  // Contact information
 ```
 
 ### Attributes and Styling

@@ -270,6 +270,8 @@ Html.Div(), Html.Span(), Html.P(), Html.H1() - Html.H6()
 Html.A(href, text), Html.Img(src, alt), Html.Button(text)
 Html.Form(action, method), Html.Input(type, name, value)
 Html.Ul(), Html.Ol(), Html.Li(), Html.Table(), Html.Select()
+Html.Strong(), Html.Em(), Html.B(), Html.I(), Html.U(), Html.S()
+Html.Code(), Html.Pre(), Html.Kbd(), Html.Samp(), Html.Var(), Html.Q()
 // ... and many more
 
 // Fluent methods for all elements
